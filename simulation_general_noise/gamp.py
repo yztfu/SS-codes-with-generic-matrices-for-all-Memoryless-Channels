@@ -192,42 +192,6 @@ def APP_mean_var_dot_zc(y_in, epsilon, mean_pri, var_pri):
     return mean_post, var_post_res
 
 
-def APP_mean_var_dot_clip(y_in, sigma_in, mean_pri, var_pri, clip):
-
-    u_star = (y_in * var_pri + mean_pri * sigma_in) / (var_pri + sigma_in)
-    sigma_star = (var_pri * sigma_in) / (var_pri + sigma_in)
-    c_star = np.exp((u_star ** 2 - ((y_in ** 2) * var_pri + (mean_pri ** 2) * sigma_in) / (var_pri + sigma_in)) / (2 * sigma_star)) \
-        * np.sqrt(sigma_star / (2 * np.pi * sigma_in * var_pri))
-
-    alpha_y = (- y_in - clip) / np.sqrt(2 * sigma_in)
-    beta_y = (clip - y_in) / np.sqrt(2 * sigma_in)
-
-    alpha_star = (- u_star - clip) / np.sqrt(2 * sigma_star)
-    beta_star = (clip - u_star) / np.sqrt(2 * sigma_star)
-
-    alpha_x = (- mean_pri - clip) / np.sqrt(2 * var_pri)
-    beta_x = (clip - mean_pri) / np.sqrt(2 * var_pri)
-
-    p_y_gx = (np.exp(- alpha_y ** 2) * (2 - special.erfc(alpha_x)) + np.exp(- beta_y ** 2) * special.erfc(beta_x)) / np.sqrt(8 * np.pi * sigma_in) \
-        + (c_star * (special.erfc(alpha_star) - special.erfc(beta_star))) / 2
-    p_y_gx = np.maximum(1e-12, p_y_gx)
-
-    integral_x = np.exp(- alpha_y ** 2) * (np.sqrt(np.pi / 2) * mean_pri * (2 - special.erfc(alpha_x)) - np.exp(- alpha_x ** 2) * np.sqrt(var_pri)) / (2 * np.pi * np.sqrt(sigma_in)) \
-        + np.exp(- beta_y ** 2) * (np.sqrt(np.pi / 2) * mean_pri * special.erfc(beta_x) + np.exp(- beta_x ** 2) * np.sqrt(var_pri)) / (2 * np.pi * np.sqrt(sigma_in)) \
-        + c_star * (np.sqrt(sigma_star) * (np.exp(- alpha_star ** 2) - np.exp(- beta_star ** 2)) + np.sqrt(np.pi / 2) * u_star * (special.erfc(alpha_star) - special.erfc(beta_star))) / np.sqrt(2 * np.pi)
-
-    integral_x2 = np.exp(- alpha_y ** 2) * (np.sqrt(np.pi) / 2 * (mean_pri ** 2 + var_pri) * (2 - special.erfc(alpha_x)) + beta_x * np.exp(- alpha_x ** 2) * var_pri) / (np.pi * np.sqrt(2 * sigma_in)) \
-        + np.exp(- beta_y ** 2) * (np.sqrt(np.pi) / 2 * (mean_pri ** 2 + var_pri) * special.erfc(beta_x) - alpha_x * np.exp(- beta_x ** 2) * var_pri) / (np.pi * np.sqrt(2 * sigma_in)) \
-        + sigma_star * c_star * (alpha_star * np.exp(- beta_star ** 2) - beta_star * np.exp(- alpha_star ** 2)) / np.sqrt(np.pi) \
-        + 0.5 * c_star * (u_star ** 2 + sigma_star) * (special.erfc(alpha_star) - special.erfc(beta_star))
-
-    mean_post = integral_x / p_y_gx
-    var_post = integral_x2 / p_y_gx - mean_post ** 2
-    var_post_res = float(np.mean(var_post))
-
-    return mean_post, var_post_res
-
-
 def g_in(L, B, beta_PRI, Var_PRI):
     N = L * B
     rt_n_Pl = np.sqrt(B).repeat(N).reshape(-1, 1)
